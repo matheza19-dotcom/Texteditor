@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Der unmögliche Texteditor™</title>
+<style>
+:root{--h:220;--l:95%;--bg:hsl(var(--h) 35% var(--l));--fg:hsl(var(--h) 40% calc(100% - var(--l)));--ac:hsl(var(--h) 80% 55%);--card:hsl(var(--h) 30% calc(var(--l) + 3%));box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--l:13%}}
+:root[data-theme="dark"]{--l:13%}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font:15px system-ui,sans-serif;transition:background 1.5s}
+body{overflow-x:hidden}
+#app{max-width:720px;margin:14px auto;padding:0 12px;display:flex;flex-direction:column;gap:10px;transition:transform 1.4s cubic-bezier(.5,0,.3,1),filter 1.2s}
+header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+nav{display:flex;gap:12px}nav span{cursor:pointer;opacity:.75}
+#task{background:var(--card);border:2px dashed var(--ac);border-radius:12px;padding:10px 12px}
+#task code{background:var(--ac);color:#fff;padding:2px 7px;border-radius:6px}
+#tools{display:flex;flex-wrap:wrap;gap:6px}
+button{font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--ac);border-radius:9px;padding:7px 12px;cursor:pointer;transition:transform .5s}
+#save{position:relative;background:var(--ac);color:#fff}
+textarea{width:100%;box-sizing:border-box;height:200px;font:18px Georgia,serif;background:var(--card);color:var(--fg);border:2px solid var(--ac);border-radius:12px;padding:12px;transition:all 1s;resize:vertical}
+footer{display:flex;flex-wrap:wrap;gap:12px;align-items:center;font-size:13px;opacity:.85}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,40px);background:#222;color:#fff;padding:9px 16px;border-radius:20px;opacity:0;transition:.4s;z-index:50;max-width:90vw;text-align:center}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#prog{position:fixed;right:10px;top:calc(10px + env(safe-area-inset-top,0px));width:190px;background:var(--card);border:1px solid var(--ac);border-radius:10px;padding:7px;font-size:11px;z-index:40;pointer-events:none}
+#prog i{display:block;height:6px;background:var(--ac);border-radius:3px;width:50%;transition:width .4s}
+#pop,#win,#calm{position:fixed;inset:0;background:#0007;display:flex;align-items:center;justify-content:center;z-index:60;padding:16px}
+#pop[hidden],#win[hidden],#calm[hidden]{display:none}
+.box{background:var(--card);color:var(--fg);border-radius:16px;padding:20px;max-width:340px;box-shadow:0 10px 40px #0006;text-align:center}
+.bs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+#calm{background:transparent;pointer-events:none;align-items:flex-end}#calm .box{pointer-events:auto;margin-bottom:60px}
+#upd{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:70;padding:16px}#upd[hidden]{display:none}#upd.bsod{background:#0b62c4;color:#fff}#upd.bsod .box{background:transparent;color:#fff;box-shadow:none;text-align:left}#upd.bsod h2{font-size:80px;margin:0}
+#qz{position:fixed;inset:0;background:#000a;display:flex;align-items:center;justify-content:center;z-index:65;padding:16px}#qz[hidden]{display:none}
+</style></head>
+<body>
+<div id="app">
+  <header><b style="font-size:18px">📝 Der unmögliche Texteditor™</b><nav id="menu"><span>Datei</span><span>Bearbeiten</span><span>Ansicht</span><span>Hilfe</span></nav></header>
+  <div id="task">🎯 <b>Deine Aufgabe:</b> Tippe exakt <code>Der schnelle braune Fuchs</code> und klicke auf Speichern. Mehr nicht. Viel Glück.</div>
+  <div id="tools"><button>B</button><button>I</button><button>U</button><button id="undo">↶ Rückgängig</button><button id="save">Speichern</button></div>
+  <textarea id="ed" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="Hier tippen… was kann schon schiefgehen? 😈"></textarea>
+  <footer><span id="batt">🔋 87%</span> <span>💸 Schulden: <b id="debt">0,00</b> €</span> Fehlversuche: <b id="err">0</b> <span>Tippfehler (nicht deine): <b id="mist">0</b></span> <span>Frust <meter id="fr" max="100" value="0"></meter></span> <span>Chaos-Stufe <b id="lv">1</b></span></footer>
+  <small style="opacity:.6"><span id="nb">Notbremse: 3× Esc drücken oder hier 3× tippen.</span> Alles hier ist Absicht. 🙃</small>
+</div>
+<div id="prog">⬆️ Update wird installiert… <b id="pp">50</b>%<i id="pb"></i></div>
+<div id="toast"></div>
+<div id="pop" hidden></div>
+<div id="upd" hidden><div class="box"><h2 id="ut"></h2><p id="um"></p><div style="height:10px;background:#0003;border-radius:5px;overflow:hidden"><i id="ub" style="display:block;height:100%;width:0;background:var(--ac);transition:width .4s"></i></div><p id="up"></p></div></div>
+<div id="qz" hidden><div class="box"><h3>🧠 Kurz-Quiz</h3><p id="qq"></p><div class="bs" id="qa" style="flex-direction:column"></div><small>Erst beantworten, dann darfst du weiterschreiben.</small></div></div>
+<div id="win" hidden><div class="box"><h2>🏆 UNMÖGLICH GESCHAFFT!</h2><p id="wt"></p><button id="again">Nochmal (noch schlimmer)</button></div></div>
+<div id="calm" hidden><div class="box">🧘 Ruhe. Atmen. Chaos ist aus.<br><br><button id="on">Chaos wieder an</button></div></div>
+<script>
+const $=i=>document.getElementById(i),pick=a=>a[Math.random()*a.length|0],rnd=(a,b)=>a+Math.random()*(b-a);
+let TARGET='Der schnelle braune Fuchs',changes=0,ban='',prevVal='',SILLY=['Banane','Kartoffel','Pinguin','Wurst','Quark','Flamingo','Ananas','Gurke','Zwiebel','Schnitzel'];
+const ed=$('ed'),app=$('app'),rows=['qwertzuiop','asdfghjkl','yxcvbnm'];
+let err=0,mist=0,off=false,tm,esc=0,escT,T={rot:0,sx:1,zoom:1,tx:0,ty:0},prog=50;
+const lv=()=>Math.min(9,1+Math.floor(err/2));
+function view(){app.style.transform=`translate(${T.tx}px,${T.ty}px) rotate(${T.rot}deg) scale(${T.sx*T.zoom},${T.zoom})`}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('on'),2400)}
+function stats(){$('debt').textContent=debt.toFixed(2).replace('.',',');$('err').textContent=err;$('mist').textContent=mist;$('lv').textContent=lv();$('fr').value=Math.min(100,err*9+mist*.4)}
+function nb(c){const l=c.toLowerCase();for(const r of rows){const i=r.indexOf(l);if(i>=0){const n=r[Math.max(0,Math.min(r.length-1,i+(Math.random()<.5?-1:1)))];return c===l?n:n.toUpperCase()}}return c}
+function put(s){ed.setRangeText(s,ed.selectionStart,ed.selectionEnd,'end')}
+
+/* Tipp-Sabotage (beforeinput funktioniert auch auf dem Handy) */
+ed.addEventListener('beforeinput',e=>{
+  prevVal=ed.value;
+  if(/^insertFrom(Paste|Drop|Yank)|^insertReplacementText/.test(e.inputType)||(e.inputType==='insertText'&&e.data&&e.data.length>1)){e.preventDefault();cheat();return}
+  if(blocked){e.preventDefault();toast('Erst die Frage beantworten! 🧠');return}
+  if(mode==='sulk'){e.preventDefault();toast(pick(['Der Editor ist beleidigt 😤','Er redet nicht mit dir.','Entschuldige dich erst!']));return}
+  if(locks.space&&e.data===' '){e.preventDefault();toast('Leertaste ist Premium 💎');return}
+  if(locks.back&&e.inputType==='deleteContentBackward'){e.preventDefault();toast('Löschen ist Premium 💎');return}
+  if(e.inputType==='insertText')debt+=.12;
+  if(off)return;
+  const L=lv(),r=Math.random();
+  if(e.inputType==='insertText'&&e.data){
+    e.preventDefault();const k=e.data;let s=mode==='alien'?caesar(k):k;if(ban&&k.toLowerCase()===ban){toast('Der Buchstabe "'+ban.toUpperCase()+'" ist Premium 💸');return}
+    if(r<.10+L*.01)s=nb(k);else if(r<.18)s=k+k;else if(r<.25)s='';else if(r<.30)s=pick(['😈','🍌','???','¯\\_(ツ)_/¯']);else if(r<.35)s=k===k.toUpperCase()?k.toLowerCase():k.toUpperCase();
+    if(s!==k)mist++;if(mode==='front')ed.setSelectionRange(0,0);put(s);
+    if(k===' '&&Math.random()<.10+L*.02){ed.value=ed.value.replace(/(\S+) $/,()=>pick(SILLY)+' ');mist++;toast('Autokorrektur hat dir geholfen 🤝')}
+    if(Math.random()<.02*L){const p=rnd(0,ed.value.length)|0;ed.setSelectionRange(p,p);toast('Dein Cursor wollte kurz verreisen ✈️')}
+    stats();
+  }else if(e.inputType==='deleteContentBackward'){
+    if(r<.25){e.preventDefault();put(pick(['x','ö','…']));mist++}
+    else if(r<.4){e.preventDefault();ed.setRangeText('',Math.max(0,ed.selectionStart-2),ed.selectionStart,'end');mist++}
+    stats();
+  }else if(e.inputType==='insertLineBreak'&&r<.5){e.preventDefault();toast('Enter ist heute im Urlaub 🏖️')}
+});
+
+/* Chaos-Effekte */
+function labels(){const b=$('save');b.textContent=pick(['Speichern','Sichern','Retten','Abschicken','Hochladen','Fertig?']);document.querySelectorAll('#tools button:not(#save)').forEach(x=>x.textContent=pick(['B','I','U','⚙️','🎲','Löschen?','Teilen','↶ Rückgängig','Hilfe']))}
+const POP=[['🍪 Cookies','Wir nutzen Cookies, um dein Tippen zu sabotieren.',['Alle akzeptieren','Alle ablehnen']],['⬆️ Update','Version 9.9.9 verfügbar. Dein Text zieht kurz um.',['Jetzt','Später (nie)']],['⭐ Umfrage','Wie gefällt dir dieser Editor?',['😍','😡']],['🔒 Premium','Der Buchstabe E kostet 0,99 €.',['Kaufen','Ich bin arm']],['🤖 Bist du ein Mensch?','Beweise es: Tippe einfach nichts.',['Ich bin kein Roboter','Beep']]];
+function popup(entry){
+  const d=$('pop');if(!d.hidden||!$('qz').hidden||!$('upd').hidden)return;const [t,m,b,fx]=entry||pick(POP);
+  d.innerHTML=`<div class="box"><h3>${t}</h3><p>${m}</p><div class="bs"></div></div>`;const bs=d.querySelector('.bs');
+  b.concat(pick(['OK','Abbrechen','Weiter'])).sort(()=>Math.random()-.5).forEach(x=>{
+    const k=document.createElement('button');k.textContent=x;
+    k.onpointerdown=ev=>{if(Math.random()<.35){ev.preventDefault();k.style.transform=`translate(${rnd(-90,90)}px,${rnd(-30,60)}px)`}};
+    k.onclick=()=>{d.hidden=true;if(fx&&Math.random()<.85){fx();return}toast(pick(['Das hat nichts bewirkt.','Danke für nichts!','Wurde ignoriert.']))};bs.append(k)});
+  d.hidden=false;
+}
+const FX=[
+  ()=>T.rot=Math.random()<.12?180:rnd(-9,9),()=>T.sx*=-1,()=>T.zoom=rnd(.75,1.25),()=>{T.tx=rnd(-50,50);T.ty=rnd(-40,40)},
+  ()=>document.documentElement.style.setProperty('--h',rnd(0,360)|0),
+  ()=>ed.style.fontFamily=pick(['Georgia,serif','ui-monospace,monospace','"Comic Sans MS",cursive','Impact,sans-serif','cursive']),
+  ()=>ed.style.fontSize=rnd(12,34)+'px',()=>ed.style.textAlign=pick(['left','right','center','justify']),
+  ()=>ed.dir=ed.dir==='rtl'?'ltr':'rtl',
+  ()=>document.querySelectorAll('#tools button').forEach(b=>b.style.order=rnd(0,9)|0),labels,
+  ()=>document.body.style.cursor=pick(['wait','not-allowed','help','crosshair','grab','progress']),
+  ()=>app.style.filter=pick(['blur(2px)','invert(1) hue-rotate(180deg)','contrast(1.6) saturate(2)','none','sepia(1)','none']),
+  ()=>{const w=ed.value.split(' ');if(ed.value&&w.length){w[rnd(0,w.length)|0]=pick(SILLY);ed.value=w.join(' ');mist++}},
+  popup,()=>{ed.style.letterSpacing=rnd(-1,8)+'px';ed.style.lineHeight=rnd(1,3)},()=>ed.style.height=rnd(120,320)+'px',
+  ()=>app.style.flexDirection=app.style.flexDirection==='column-reverse'?'column':'column-reverse',
+  ()=>{$('save').style.transform=`translate(${rnd(-90,90)}px,${rnd(-20,60)}px)`}
+];
+function loop(){
+  if(off)return;
+  for(let i=0,n=1+(lv()>3)+(lv()>6);i<n;i++)pick(FX)();
+  if(Math.random()<.25){T.sx=1;app.style.filter='none'}
+  view();stats();tm=setTimeout(loop,Math.max(1700,4200-lv()*350));
+}
+setInterval(()=>{if(off)return;prog=Math.max(1,Math.min(99,prog+rnd(-7,5)));$('pp').textContent=prog|0;$('pb').style.width=prog+'%'},500);
+
+/* Speichern: läuft weg, will bestätigt werden, klappt fast nie */
+$('save').onpointerdown=e=>{if(!off&&Math.random()<.35+lv()*.05){e.preventDefault();$('save').style.transform=`translate(${rnd(-120,120)}px,${rnd(-40,160)}px) rotate(${rnd(-25,25)}deg)`}};
+$('save').onclick=()=>{
+  const v=ed.value.trim();
+  if(v===TARGET){changes++;TARGET+=' '+pick(SILLY);showTask();toast(pick(EX));$('save').style.transform=`translate(${rnd(-100,100)}px,${rnd(0,120)}px)`;if(Math.random()<.5)update();return}
+  err++;stats();if(Math.random()<.4)rain('🎉');
+  toast(pick(['Nahe dran! (Nein.)','Fehler 404: Talent nicht gefunden','Das ist nicht, was ich wollte.','Du hast: "'+v.slice(0,30)+'"… hm.','Länge '+v.length+' von '+TARGET.length+'. Mut!']));
+};
+$('again').onclick=()=>{err+=4;ed.value='';$('win').hidden=true;stats()};
+document.querySelectorAll('#menu span,#tools button:not(#save)').forEach(x=>x.onclick=()=>toast(pick(['Diese Funktion ist gerade im Meeting.','Bitte erst Premium kaufen.','Fehler 500: Keine Lust.','Klick erfasst, ignoriert.','Hast du es schon mal aus- und wieder eingeschaltet?'])));
+
+/* Notbremse: 3× Esc */
+function calm(){off=true;clearTimeout(tm);T={rot:0,sx:1,zoom:1,tx:0,ty:0};view();app.style.filter='none';app.style.flexDirection='column';document.body.style.cursor='';$('save').style.transform='';$('pop').hidden=true;$('upd').hidden=true;clearInterval(updT);$('qz').hidden=true;blocked=false;ed.readOnly=false;app.style.opacity=1;locks={};mode='';$('save').style.visibility='';if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});$('calm').hidden=false}
+addEventListener('keydown',e=>{if(e.key==='Escape'){esc++;clearTimeout(escT);escT=setTimeout(()=>esc=0,1500);if(esc>=3){esc=0;calm()}}});
+$('on').onclick=()=>{off=false;$('calm').hidden=true;loop()};
+/* Anti-Schummeln, Updates, Vollbild-Terror */
+const EX=['Fehler 418: Ich bin eine Teekanne ☕','Perfekt! Leider hat sich die Aufgabe gerade geändert.','Dein Text ist verdächtig korrekt. 🕵️','Der Fuchs ist weggelaufen 🦊','Speichern geht nur bei Vollmond 🌕','Ticket #4711: In Bearbeitung seit 2009.'];
+function cheat(){mist+=2;toast(pick(['📋 Einfügen? Erwischt! 🕵️','Nicht schummeln!','Copy-Paste ist hier verboten, Faulpelz.']));stats()}
+function showTask(){$('task').innerHTML='🎯 <b>Deine Aufgabe:</b> Tippe exakt <code>'+TARGET+'</code> und klicke auf Speichern. Mehr nicht. Viel Glück.'+(changes?` <small>(Ziel schon ${changes}× aktualisiert)</small>`:'')}
+ed.addEventListener('paste',e=>{e.preventDefault();cheat()});
+ed.addEventListener('drop',e=>{e.preventDefault();cheat()});
+ed.addEventListener('input',()=>{if(ed.value.length-prevVal.length>2){ed.value=prevVal;cheat()}});
+let updT,nbc=0;
+const UPD=['wipe','pengu','rev','ban','bsod','retro','shrink'];
+let useq=[],ui=0;
+function update(kind){
+  const u=$('upd');if(!u.hidden||off||!$('qz').hidden)return;kind=kind||pick(UPD);
+  const b=kind==='bsod';u.className=b?'bsod':'';u.hidden=false;
+  $('ut').textContent=b?':(':'⬆️ Update 9.9.9 wird installiert';
+  $('um').textContent=b?'Dein Editor hat ein Problem und muss neu gestartet werden. Fehlercode: 0x00FUCHS':'Bitte nicht tippen, nicht atmen, nicht ausschalten. Nicht klicken!';
+  $('ub').parentNode.style.display=b?'none':'';$('up').textContent='';
+  useq=b?[1,2,3,4,5,6,7,8,9,10]:[8,19,33,47,62,75,88,97,99,12,25,41,58,72,90,99,100];ui=0;clearInterval(updT);
+  updT=setInterval(()=>{
+    if(ui<useq.length){const p=useq[ui++];$('ub').style.width=p+'%';$('up').textContent=b?'Sammle Fehlerinformationen… '+ui*10+'%':p+'%'+(p===12?' (oh. Zurück auf Anfang.)':'')}
+    else{clearInterval(updT);u.hidden=true;outcome(kind)}
+  },b?600:900);
+}
+$('upd').addEventListener('pointerdown',()=>{if($('upd').hidden)return;ui=Math.max(0,ui-3);useq.push(30,55,80,99);$('um').textContent=pick(['Du hast geklickt. Das verlängert alles. 😇','Klicken beschleunigt NICHT. Eher im Gegenteil.','Bitte nicht anfassen!','Jeder Klick kostet 10 Sekunden. Rechnung folgt.'])});
+function outcome(k){
+  if(k==='wipe'){ed.value='';toast('Update fertig! Dein Text wurde als veraltet entfernt 🗑️')}
+  else if(k==='bsod'){ed.value='';toast('Neu gestartet. Alles weg. Willkommen zurück! 👋')}
+  else if(k==='pengu'){ed.value=ed.value.replace(/[aeiouäöü]/gi,'🐧');toast('Neue Sprache: Pinguinisch 🐧')}
+  else if(k==='rev'){ed.value=[...ed.value].reverse().join('');toast('Dein Text läuft jetzt rückwärts ⏪')}
+  else if(k==='ban'){ban=pick('esnrtai'.split(''));toast('Der Buchstabe "'+ban.toUpperCase()+'" ist jetzt Premium 💸');setTimeout(()=>{ban='';toast('Der Buchstabe ist wieder frei (vorerst)')},22000)}
+  else if(k==='retro'){app.style.fontFamily='"Courier New",monospace';document.documentElement.style.setProperty('--h',120);toast('Retro-Modus™ aktiviert (Windows 95)')}
+  else if(k==='shrink'){ed.style.fontSize='7px';toast('Schrift wurde für dich optimiert 🔬')}
+  stats();
+}
+async function fs(){try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch(e){}}
+['pointerdown','keydown'].forEach(t=>addEventListener(t,()=>{if(!off&&Math.random()<(t==='keydown'?.04:.12)+lv()*.015)fs()},true));
+document.addEventListener('fullscreenchange',()=>toast(document.fullscreenElement?'Vollbild! Überraschung 🎉':'Vollbild verlassen. Oder? 🤔'));
+setInterval(()=>{if(!off&&Math.random()<.6)update()},26000);
+$('nb').onclick=()=>{if(++nbc>=3){nbc=0;calm()}};
+showTask();
+/* Quiz: nur die FALSCHE Antwort ist richtig – bis dahin gesperrt */
+const QZ=[['Wie viel ist 2 + 2?','5',['4','Fisch']],['Welche Farbe hat die Sonne?','Lila',['Gelb','Weiß']],['Hauptstadt von Deutschland?','Gelsenkirchen',['Berlin','Bonn']],['Wie viele Beine hat ein Hund?','7',['4','6']],['Scherzfrage: Welcher Monat hat 28 Tage?','Nur der Februar',['Alle','Keiner']],['Was kommt nach dem Montag?','Noch ein Montag',['Dienstag','Mittwoch']],['Wer hat die Glühbirne erfunden?','Der Fuchs',['Edison','Tesla']],['Was wiegt mehr: 1 kg Federn oder 1 kg Steine?','Steine (viel mehr!)',['Gleich schwer','Federn']],['Wie heißt der Papst mit Vornamen?','Gerhard',['Franziskus','Leo']]];
+let blocked=false,qwrong=0,bat=87;
+function quiz(){
+  if(off||!$('qz').hidden||!$('pop').hidden||!$('upd').hidden)return;
+  const [q,ok,bad]=pick(QZ);blocked=true;qwrong=0;$('qq').textContent=q;const a=$('qa');a.innerHTML='';
+  [ok,...bad].sort(()=>Math.random()-.5).forEach(x=>{const k=document.createElement('button');k.textContent=x;
+    k.onclick=()=>{if(x===ok){$('qz').hidden=true;blocked=false;toast('Richtig! Weil es falsch war. Weiterschreiben erlaubt ✍️')}
+      else{toast(pick(['Falsch! (Zu richtig.)','Zu korrekt! Versuch was Falschem.','Leider richtig – also falsch.']));if(++qwrong>=3){$('qz').hidden=true;blocked=false;quiz()}}};a.append(k)});
+  $('qz').hidden=false;
+}
+const batt=()=>$('batt').textContent=(bat<=10?'🪫 ':'🔋 ')+Math.round(bat)+'%';
+setInterval(()=>{if(off)return;bat=Math.max(1,Math.min(100,bat+rnd(-9,4)));if(bat<=4&&Math.random()<.4){toast('🪫 Akku kritisch! Editor wird dunkler…');app.style.opacity=.55;setTimeout(()=>app.style.opacity=1,5000)}batt()},2500);
+POP.push(
+ ['🔋 Akku 1 %','Dein EDITOR-Akku ist leer! (Nicht dein Gerät.) Bitte lade ihn auf.',['Laden','Ignorieren'],()=>{bat=1;batt();toast('Ladekabel gefunden… war aber ein Spaghetti 🍝')}],
+ ['🦠 VIRUS GEFUNDEN!','Dein Text hat 3 Viren! Bereinigung startet…',['Scannen','Löschen'],()=>{const a=[...ed.value];for(let i=0;i<3&&a.length;i++)a[rnd(0,a.length)|0]='🦠';ed.value=a.join('');toast('3 Viren gefunden und gleich eingepflanzt… äh, entfernt.')}],
+ ['😂 Witz des Tages','Warum können Geister so schlecht lügen? Man sieht durch sie hindurch.',['Haha','Nicht lustig'],()=>toast('Deine Reaktion wurde an den Fuchs weitergeleitet.')],
+ ['💾 Speicher voll','Dein Editor hat nur noch 3 Zeichen frei.',['Platz schaffen','Mehr kaufen'],()=>{ed.value=ed.value.slice(0,-5);toast('5 Zeichen entsorgt ♻️')}],
+ ['🚨 Rechtschreibpolizei','Bitte treten Sie von der Tastatur zurück.',['Zurücktreten','Bleiben'],()=>{ed.value=ed.value.toUpperCase();toast('ALLES GROSS. SO.')}],
+ ['🌡️ Überhitzung','Der Editor glüht! Bitte puste ins Gerät.',['Pusten','Nicht pusten'],()=>{T.zoom=1.4;view();setTimeout(()=>{T.zoom=1;view()},5000);toast('Heiß!! 🔥')}],
+ ['📶 Verbindung weg','Dein Editor sucht einen Vogel für die Internetverbindung…',['Warten','Aufgeben'],()=>{ed.readOnly=true;toast('Funkstille… 6 Sekunden 🐦');setTimeout(()=>ed.readOnly=false,6000)}],
+ ['🎂 Du hast Geburtstag!','Geschenk: Alle Buchstaben doppelt!',['Danke!','Nein'],()=>{ed.value=[...ed.value].map(c=>c+c).join('')}],
+ ['🧹 Systembereinigung','12 unnötige Wörter gefunden.',['Bereinigen','Behalten'],()=>{ed.value=ed.value.split(' ').filter((_,i)=>i%2===0).join(' ');toast('Jedes zweite Wort war unnötig.')}]
+);
+FX.push(fs,fs,update,quiz,quiz,quiz,popup,popup,popup,
+ ()=>{const w=ed.value.split(' ');if(w.length>2){w.sort(()=>Math.random()-.5);ed.value=w.join(' ');mist++;toast('Wörter neu gemischt 🃏')}},
+ ()=>ed.style.transform='rotate('+rnd(-6,6)+'deg)',
+ ()=>{document.title=pick(['Editor (reagiert nicht)','Fuchs.exe','404','Bitte warten…','Schon wieder du?'])},
+ ()=>document.querySelectorAll('#menu span').forEach(x=>x.textContent=pick(['Datei','Dateien','Daten?','Dabei','Hilfe!','Aussicht','Nichts'])));
+/* Premium-Wahnsinn, Schulden & Mahnungen */
+let debt=0,dl=0,locks={};
+function lockFeat(k){locks[k]=true;toast({space:'Die Leertaste ist jetzt Premium 💎',back:'Löschen ist jetzt Premium 💎'}[k]);setTimeout(()=>{locks[k]=false;toast('Lizenz abgelaufen… äh, wieder frei (vorerst)')},22000)}
+POP.push(
+ ['💎 Premium-Abo','Jetzt nur 19,99 € pro Minute: werbefrei (mit Werbung).',['Abonnieren','Später'],()=>{debt+=20;toast('Abo aktiv! Du erhältst täglich 40 Newsletter 📧')}],
+ ['👑 Gold-Tarif','Mit Gold darf der Fuchs live mitlesen.',['Gold!','Silber'],()=>{debt+=35;toast('Der Fuchs liest mit. 🦊👀')}],
+ ['🔤 Buchstaben-Flatrate','Alle 26 Buchstaben nur 4,99 €/Woche. Aktuell: 21.',['Upgraden','Nö'],()=>{debt+=5;ban=pick('xyqjkw'.split(''));toast('Jetzt 25 Buchstaben! (Außer "'+ban.toUpperCase()+'")');setTimeout(()=>ban='',15000)}],
+ ['⌨️ Leertasten-Lizenz','Deine Leertasten-Lizenz ist abgelaufen.',['Verlängern','Nein'],()=>{debt+=10;lockFeat('space')}],
+ ['🗑️ Löschen-Premium','Das Löschen von Fehlern ist ab sofort kostenpflichtig.',['Kaufen','Fehler behalten'],()=>lockFeat('back')],
+ ['🛡️ Premium-Schutz','Schütze deinen Text vor Updates für nur 49,99 €.',['Schützen','Riskieren'],()=>{debt+=50;toast('Schutz aktiv! (Gilt nicht für Updates.)')}],
+ ['📺 Werbung','Dieses Erlebnis wird präsentiert von FuchsCola™. Weiter in 9…',['Überspringen','Schließen'],()=>{ed.readOnly=true;toast('Werbung läuft… 7 Sekunden 📺');setTimeout(()=>ed.readOnly=false,7000)}],
+ ['⏱️ Tippgeschwindigkeit','Schnelles Tippen kostet extra. Wir haben dich gedrosselt.',['Entdrosseln','Okay'],()=>{debt+=8;ed.readOnly=true;setTimeout(()=>ed.readOnly=false,3000);toast('Drosselung… 3 Sekunden 🐌')}]
+);
+const DUN=[
+ ['📬 1. Mahnung',()=>`Sie schulden uns ${debt.toFixed(2)} € für verbrauchte Buchstaben.`,['Bezahlen','Ignorieren'],()=>{debt+=5;toast('Mahngebühr: 5 € (für die Mahnung)')}],
+ ['📬 2. Mahnung (wütender)',()=>`Letzte Chance! Offen: ${debt.toFixed(2)} €. Der Ton wird rauer.`,['Bezahlen','Widerspruch'],()=>{debt+=15;lockFeat('space')}],
+ ['⚖️ Inkasso Fuchs & Partner','Wir holen uns, was uns zusteht. Zum Beispiel deinen Text.',['Zahlen','Weglaufen'],()=>update('wipe')],
+ ['🚔 Gerichtsvollzieher','Pfändung läuft. Der Speichern-Button wurde beschlagnahmt.',['Verhandeln','Verstecken'],()=>{$('save').style.visibility='hidden';ed.value=ed.value.slice(0,-10);setTimeout(()=>$('save').style.visibility='',20000)}],
+ ['🏴‍☠️ Zwangsvollstreckung','Wir nehmen ALLES. Auch die Schwerkraft.',['Okay…','Nein!'],()=>{ed.value='';debt=0;T.rot=180;view();setTimeout(()=>{T.rot=0;view()},8000);toast('Schuldenschnitt! 🎉 (Dein Text ist weg.)')}]
+];
+function dun(){
+  const th=[25,60,110,170,240];if(off||debt<th[dl])return;
+  if(!$('pop').hidden||!$('qz').hidden||!$('upd').hidden)return;
+  const [t,m,b,fx]=DUN[dl];dl=(dl+1)%5;popup([t,typeof m==='function'?m():m,b,fx]);
+}
+setInterval(()=>{if(off)return;debt+=rnd(.4,2.2);stats();dun()},4000);
+FX.push(popup,popup);
+/* Noch mehr Wahnsinn: Modi, Geister, Zeitreise, Fuchs-Dieb, Captcha, Regen */
+let mode='';const snaps=[];
+const caesar=c=>/[a-zA-Z]/.test(c)?(c==='z'?'a':c==='Z'?'A':String.fromCharCode(c.charCodeAt(0)+1)):c;
+function setMode(m,sec,msg){mode=m;toast(msg);setTimeout(()=>{if(mode===m){mode='';toast('Zurück zur Normalität (haha, nein)')}},sec*1000)}
+function ghost(){const a=[...pick(['boo','huuu','äh','Fuchs','quak','👻'])];let i=0;toast('👻 Ein Geist tippt mit…');const t=setInterval(()=>{if(i<a.length)ed.value+=a[i++];else clearInterval(t)},300)}
+setInterval(()=>{snaps.push(ed.value);if(snaps.length>8)snaps.shift()},4000);
+function warp(){ed.value=snaps[0]||'';toast('⏳ Zeitreise: Du bist 30 Sekunden zurückgereist!')}
+function grav(){toast('🍎 Schwerkraft-Update: Alles fällt!');T.ty=230;view();setTimeout(()=>{T.ty=0;view()},3500)}
+function rain(e){for(let i=0;i<24;i++){const s=document.createElement('span');s.textContent=e;s.style.cssText=`position:fixed;top:-50px;left:${rnd(0,95)}vw;font-size:${rnd(20,44)}px;z-index:55;pointer-events:none;transition:transform ${rnd(2.5,5)}s linear`;document.body.append(s);requestAnimationFrame(()=>requestAnimationFrame(()=>s.style.transform=`translateY(${innerHeight+100}px) rotate(${rnd(-90,90)}deg)`));setTimeout(()=>s.remove(),6000)}}
+function stealWord(){const w=ed.value.split(' ');if(w.length){w.splice(rnd(0,w.length)|0,1);ed.value=w.join(' ')}}
+function fox(){
+  if(off||$('foxy'))return;const f=document.createElement('div');f.id='foxy';f.textContent='🦊';
+  f.style.cssText='position:fixed;left:-70px;top:'+rnd(15,75)+'vh;font-size:54px;z-index:56;cursor:pointer;transition:left 7s linear';document.body.append(f);
+  let caught=false;f.onpointerdown=()=>{caught=true;stealWord();toast('Gefangen! Er beißt sich los und klaut trotzdem ein Wort 🦊');f.remove()};
+  requestAnimationFrame(()=>requestAnimationFrame(()=>f.style.left='105vw'));
+  setTimeout(()=>{if(!caught){stealWord();toast('🦊 Der Fuchs hat ein Wort geklaut!')}f.remove()},7300);
+}
+function captcha(){
+  if(off||!$('qz').hidden||!$('pop').hidden||!$('upd').hidden)return;
+  blocked=true;$('qq').textContent='🤖 Wähle alle Felder mit einem Fuchs aus.';
+  const a=$('qa');a.innerHTML='';const g=document.createElement('div');g.style.cssText='display:grid;grid-template-columns:repeat(3,64px);gap:6px;justify-content:center';
+  const cells=[...Array(9)].map(()=>pick(['🦊','🦊','🍌','🐧','🧀']));if(!cells.some(c=>c!=='🦊'))cells[0]='🍌';const sel=new Set();
+  cells.forEach((c,i)=>{const b=document.createElement('button');b.textContent=c;b.style.fontSize='28px';b.onclick=()=>{sel.has(i)?sel.delete(i):sel.add(i);b.style.outline=sel.has(i)?'3px solid var(--ac)':''};g.append(b)});
+  const v=document.createElement('button');v.textContent='Bestätigen';
+  v.onclick=()=>{const need=cells.map((c,i)=>c!=='🦊'?i:-1).filter(i=>i>=0);
+    if(need.length===sel.size&&need.every(i=>sel.has(i))){$('qz').hidden=true;blocked=false;toast('Du bist kein Roboter! Weil du falsch warst. 🤖✅')}
+    else toast(pick(['Zu korrekt. Roboter-Verdacht!','Ein Mensch hätte das Falsche gewählt.','Fehlgeschlagen. Nochmal, Mensch.']))};
+  a.append(g,v);$('qz').hidden=false;
+}
+POP.push(
+ ['💬 Chef Fuchs schreibt','Bist du schon fertig? Ich sehe 0 produktive Wörter.',['Ja, Chef!','Fast…'],()=>{toast('Chef: "Gut. Dann bitte alles nochmal."');ed.value=''}],
+ ['🍪 Datenschutz (84 Seiten)','Wir verkaufen deine Tippfehler an Pinguine. Zustimmen?',['Zustimmen','Lesen'],()=>{debt+=12;toast('Danke! Deine Tippfehler sind jetzt wertvoll 🐧')}],
+ ['💡 Tipp des Tages','Hör einfach auf zu tippen. Dann gibt es keine Fehler.',['Danke','Okay'],()=>{ed.readOnly=true;setTimeout(()=>ed.readOnly=false,4000);toast('Tipp befolgt. 4 Sekunden Pause.')}],
+ ['🔮 Horoskop','Heute wird alles anders. Besonders alles.',['Glauben','Nicht glauben'],()=>{for(let i=0;i<3;i++)pick(FX)();view()}]
+);
+FX.push(()=>setMode('alien',20,'👽 Tastatur auf Außerirdisch umgestellt (jeder Buchstabe +1)'),()=>setMode('front',15,'↩️ Dein Cursor wohnt jetzt am Textanfang'),()=>setMode('sulk',8,'😤 Der Editor ist beleidigt'),
+ ghost,warp,grav,()=>{rain(pick(['🍌','🦊','💸','🐧','🧀']));toast('Es regnet Zeug ☔')},fox,fox,captcha,captcha);
+stats();tm=setTimeout(loop,2500);
+</script></body></html>
